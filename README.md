@@ -3,7 +3,7 @@
 (**M**etabo**A**nalyst.**ca**)
 
 * Bunch of utility functions
-* Needs unit testing! Onky anecdotal testing so far.
+* Needs unit testing! Only anecdotal testing so far.
 
 ### "Installation"
 
