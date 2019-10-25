@@ -8,13 +8,16 @@ call_maca_normalization <- function(fn_auc_csv) {
     3. Log2-transformation data
     Implemented because I can't be bothered to re-write median normalization from scratch.
 
+
     PARAMS
     ------
     fn_auc_csv: str; path to input csv
 
     RETURNS
     -------
-    tbl0: tibble of normalized data, where first column are sample names and second column are groups
+    tbl0: tibble of normalized data, where first column are sample names and second column are groups. 
+
+    Validated against the metaboanalyst.ca output with sepsis data (10 csvs), with an elementwise error of <10e15. 
     "
     mSet<-InitDataObjects("conc", "stat", FALSE)
     mSet<-Read.TextData(mSet, fn_auc_csv, "rowu", "disc");
@@ -26,11 +29,11 @@ call_maca_normalization <- function(fn_auc_csv) {
     # Load and merge the groups column, which mSet annoyingly doesn't have
     tbl0 <- as_tibble(mSet$dataSet$norm, rownames = "Sample")
 
-    tbl_m <- read_csv(fn_in)
+    tbl_m <- suppressMessages(read_csv(fn_auc_csv))
     sample_colname <- colnames(tbl_m[,1])
     group_colname <- colnames(tbl_m[,2])
-    tbl_m <-  tbl_m %>% select(c(!!sample_colname, !!group_colname)) %>% arrange(group) %>% rename("Sample"=sample)
-    tbl0 <- inner_join(tbl_m, tbl0, by="Sample")
+    tbl_m <-  tbl_m %>% dplyr::select(c(!!sample_colname, !!group_colname)) %>% arrange(!!group_colname) %>% dplyr::rename("Sample"=!!sample_colname)
+    tbl0 <- inner_join(tbl_m, tbl0, by=!!sample_colname)
 
     return(tbl0)
 }
@@ -91,7 +94,7 @@ get_de_metabs <- function(tbl, input_alpha, grp_numerator, grp_denominator, inpu
     input_alpha: float; alpha at which t-tests are applied.
     grp_numerator: numerator of class/group for fold change calculations
     grp_denominator: denominator of class/group for fold change calculations
-    input_fdr: float; fdr at which the benjamini-hochberg method is applied.
+    input_fdr: float; threshold p-value at which the benjamini-hochberg method is applied. All results are returned; only affects FC colour assigned. 
 
     OUTPUT
     ------
@@ -205,8 +208,8 @@ lookup_chem_id <- function(cpd_names_vec) {
     # print warnings
     print(mset$msgset$nmcheck.msg[2])
     cpd_names_tbl <- as_tibble(mset$dataSet$map.table)
-    cpd_names_tbl <- cpd_names_tbl %>% rename("Sample"="Query")
-    cpd_names_tbl <- cpd_names_tbl %>% select("Sample", "KEGG", "HMDB")
+    cpd_names_tbl <- cpd_names_tbl %>% dplyr::rename("Sample"="Query")
+    cpd_names_tbl <- cpd_names_tbl %>% dplyr::select("Sample", "KEGG", "HMDB")
 
     # replace NA, string "NA", or empty cell with string "undef"
     cpd_names_tbl[cpd_names_tbl == ""] <- "undef"
